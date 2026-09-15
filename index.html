@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova-Scan — Food purity, provable in seconds</title>
+<meta name="description" content="A low-cost smartphone spectrometer prototype for detecting food adulteration on the spot.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="topbar">
+  <div class="topbar__mark">NOVA<span>-</span>SCAN</div>
+  <nav class="topbar__nav">
+    <a href="#problem">Problem</a>
+    <a href="#how">How it works</a>
+    <a href="#features">Features</a>
+    <a href="#roadmap">Roadmap</a>
+  </nav>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero" id="top">
+  <div class="hero__text">
+    <p class="eyebrow">Modular forensic auditing for food safety</p>
+    <h1>Food purity,<br>provable in your hand.</h1>
+    <p class="hero__sub">Nova-Scan turns a salvaged DVD drive and a smartphone camera into a field spectrometer — so anyone can check a spice, a splash of milk, or a spoon of oil before it goes in the pan.</p>
+    <div class="hero__cta">
+      <button class="btn btn--primary" data-action="try-scan">Try the scan</button>
+      <a class="btn btn--ghost" href="#problem">Read the problem</a>
+    </div>
+    <dl class="hero__stats">
+      <div><dt>₹10,000–₹50,000</dt><dd>cost of a lab spectrometer</dd></div>
+      <div><dt>90%</dt><dd>lower cost, Nova-Scan vs. benchtop</dd></div>
+      <div><dt>2–5 min</dt><dd>time to a result</dd></div>
+    </dl>
+  </div>
+
+  <div class="phone-stage">
+    <div class="phone" id="phone">
+      <div class="phone__notch"></div>
+      <div class="phone__screen" id="phoneScreen">
+        <!-- injected by app.js -->
+      </div>
+      <nav class="phone__nav" id="phoneNav">
+        <button data-screen="scan" class="active" aria-label="Scan">
+          <svg viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M20 8V6a2 2 0 0 0-2-2h-2M4 16v2a2 2 0 0 0 2 2h2M20 16v2a2 2 0 0 1-2 2h-2M4 12h16" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+          <span>Scan</span>
+        </button>
+        <button data-screen="report" aria-label="Report">
+          <svg viewBox="0 0 24 24"><path d="M12 2 3 7v6c0 5 4 8.5 9 9 5-.5 9-4 9-9V7l-9-5Z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/></svg>
+          <span>Report</span>
+        </button>
+        <button data-screen="learn" aria-label="Learn">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span>Learn</span>
+        </button>
+        <button data-screen="map" aria-label="Community">
+          <svg viewBox="0 0 24 24"><path d="M9 20 3 17V4l6 3 6-3 6 3v13l-6-3-6 3Z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/></svg>
+          <span>Map</span>
+        </button>
+      </nav>
+    </div>
+    <p class="phone-stage__caption">Interactive prototype — tap around, nothing here reaches a real lab yet.</p>
+  </div>
+</section>
+
+<!-- ===================== PROBLEM ===================== -->
+<section class="section section--dark" id="problem">
+  <div class="section__inner">
+    <p class="eyebrow eyebrow--light">Problem statement</p>
+    <h2>Everyone knows. No one can check.</h2>
+    <div class="split">
+      <div class="split__col">
+        <h3>Everyone knows</h3>
+        <p>Press reports and FSSAI data already make food adulteration common knowledge in India — synthetic dyes in turmeric, melamine in milk. It isn't a secret.</p>
+      </div>
+      <div class="split__col">
+        <h3>No one can verify</h3>
+        <p>A lab test costs ₹10,000–₹50,000 and takes days. There's no way to check in the moment of buying — so unsafe food keeps moving, especially through low-income communities.</p>
+      </div>
+    </div>
+
+    <div class="adulterant-table" role="table" aria-label="Common adulterants and health risks">
+      <div class="adulterant-table__row adulterant-table__row--head" role="row">
+        <span role="columnheader">Food</span><span role="columnheader">Adulterant</span><span role="columnheader">Health risk</span>
+      </div>
+      <div class="adulterant-table__row" role="row"><span>Milk</span><span>Urea, formalin</span><span>Kidney &amp; liver damage, carcinogenic</span></div>
+      <div class="adulterant-table__row" role="row"><span>Oil</span><span>Argemone oil, TOCP</span><span>Epidemic dropsy, paralysis, blindness</span></div>
+      <div class="adulterant-table__row" role="row"><span>Turmeric</span><span>Metanil yellow, lead chromate</span><span>Neurotoxicity, lead poisoning, cancer</span></div>
+      <div class="adulterant-table__row" role="row"><span>Chilli</span><span>Sudan red, rhodamine B</span><span>Carcinogenic, banned for food use</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HOW IT WORKS ===================== -->
+<section class="section" id="how">
+  <div class="section__inner">
+    <p class="eyebrow">The detection engine</p>
+    <h2>Three steps, one traffic light.</h2>
+    <div class="steps">
+      <article class="step">
+        <span class="step__num">01</span>
+        <h3>Real-time spectral overlay</h3>
+        <p>The camera view shows a live diffraction spectrum from a repurposed DVD grating. Align the sample and the reticle locks on, reading its chemical fingerprint instantly.</p>
+      </article>
+      <article class="step">
+        <span class="step__num">02</span>
+        <h3>One-tap comparison</h3>
+        <p>Scan a trusted "known pure" sample once and save it as a baseline. Every market sample after that is a single-tap comparison against it.</p>
+      </article>
+      <article class="step">
+        <span class="step__num">03</span>
+        <h3>Traffic-light verdict</h3>
+        <p>Green is pure, yellow is substandard, red is adulterated — a result anyone can read in the shop, with no chemistry background required.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FEATURES ===================== -->
+<section class="section section--paper" id="features">
+  <div class="section__inner">
+    <p class="eyebrow">What the app does after the scan</p>
+    <h2>A verdict is the start, not the end.</h2>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <h3>Active whistleblower tools</h3>
+        <p>A red result turns a shopper into a citizen investigator: a one-click FSSAI direct-link, an evidence vault that captures the spectral signature, GPS, and vendor ID automatically, and anonymous submission that never reveals identity to the vendor.</p>
+      </article>
+      <article class="feature-card">
+        <h3>Medical &amp; hazard intelligence</h3>
+        <p>Every detected adulterant comes with a clinical brief — WHO classification, where it's typically found, and the long-term health impact — in plain language, not a lab report.</p>
+      </article>
+      <article class="feature-card">
+        <h3>Community risk mapping</h3>
+        <p>Scans build a crowdsourced heatmap of adulteration by neighbourhood, and local markets earn a "Purity Score" from aggregate resident scans — safety made visible, not just reported.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== IMPACT ===================== -->
+<section class="section section--dark" id="impact">
+  <div class="section__inner">
+    <p class="eyebrow eyebrow--light">Why consumer-driven detection matters</p>
+    <div class="impact-grid">
+      <div class="impact-stat"><dt>70%</dt><dd>estimated adulteration rate in Indian street food, per recent food-safety surveys</dd></div>
+      <div class="impact-stat"><dt>40%</dt><dd>of common adulterants escape routine lab testing on cost and access alone</dd></div>
+      <div class="impact-stat"><dt>3×</dt><dd>faster regulatory response when citizen reports supplement official inspection</dd></div>
+    </div>
+    <p class="impact-note">Traditional food safety relies on periodic lab testing and inspector visits. Mobile detection turns every consumer into a frontline monitor — continuous surveillance that complements official oversight instead of waiting on it.</p>
+  </div>
+</section>
+
+<!-- ===================== ROADMAP ===================== -->
+<section class="section" id="roadmap">
+  <div class="section__inner">
+    <p class="eyebrow">Implementation roadmap</p>
+    <h2>From bench to bazaar.</h2>
+    <ol class="roadmap">
+      <li><span class="roadmap__phase">Phase 1</span><h3>Prototype validation</h3><p>Lab testing against NABL-certified reference spectrometers.</p></li>
+      <li><span class="roadmap__phase">Phase 2</span><h3>MSME pilot</h3><p>Field trials with spice processors and dairy cooperatives.</p></li>
+      <li><span class="roadmap__phase">Phase 3</span><h3>Scale manufacturing</h3><p>Local MSME production partnerships for regional distribution.</p></li>
+      <li><span class="roadmap__phase">Phase 4</span><h3>Digital integration</h3><p>Blockchain-verified audit trails for supply-chain transparency.</p></li>
+    </ol>
+
+    <div class="hub-note">
+      <h3>Calibration Hub network</h3>
+      <p>Local repair shops and tech centres become certified Calibration Hubs — zero equipment cost for MSME partners, recurring revenue from test commissions, and a branded, trained service layer between Nova-Scan and the street.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>Four builders, one mission: make food purity provable, not just promised.</p>
+  <p class="footer__meta">Nova-Scan — prototype interface, built from the project deck. Not a certified medical or lab device.</p>
+</footer>
+
+<script src="js/app.js"></script>
+</body>
+</html>
