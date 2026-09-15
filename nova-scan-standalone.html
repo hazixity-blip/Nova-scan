@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova-Scan — Food purity, provable in seconds</title>
+<meta name="description" content="A low-cost smartphone spectrometer prototype for detecting food adulteration on the spot.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============ tokens ============ */
+:root{
+  --ink: #16171C;
+  --surface: #1E2027;
+  --surface-2: #262832;
+  --paper: #F2EEE4;
+  --paper-dim: #E6E0D1;
+  --text-on-dark: #F2EEE4;
+  --text-on-dark-muted: #9497A3;
+  --text-on-light: #16171C;
+  --text-on-light-muted: #6B6656;
+  --amber: #D98A2B;
+  --amber-deep: #B9711D;
+  --green: #3FA65C;
+  --yellow: #E0A82E;
+  --red: #D6493F;
+  --rule: rgba(242,238,228,0.14);
+  --rule-light: rgba(22,23,28,0.12);
+
+  --font-display: "Archivo", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--text-on-light);
+  font-family:var(--font-body);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{ font-family:var(--font-display); margin:0; line-height:1.08; letter-spacing:-0.01em; }
+p{ margin:0; }
+a{ color:inherit; }
+ul,ol,dl{ margin:0; padding:0; list-style:none; }
+button{ font-family:inherit; cursor:pointer; }
+
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:0.8rem;
+  color:var(--amber-deep);
+  margin-bottom:14px;
+}
+.eyebrow--light{ color:var(--amber); }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+}
+
+/* subtle grain overlay for texture, not decoration-heavy */
+.grain{
+  position:fixed; inset:0; pointer-events:none; z-index:999;
+  opacity:0.035; mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============ topbar ============ */
+.topbar{
+  position:sticky; top:0; z-index:50;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px clamp(20px,5vw,56px);
+  background:rgba(242,238,228,0.86);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--rule-light);
+}
+.topbar__mark{
+  font-family:var(--font-display); font-weight:800; font-size:1.05rem; letter-spacing:0.02em;
+}
+.topbar__mark span{ color:var(--amber); }
+.topbar__nav{ display:flex; gap:28px; font-size:0.92rem; }
+.topbar__nav a{ text-decoration:none; color:var(--text-on-light-muted); }
+.topbar__nav a:hover{ color:var(--text-on-light); }
+@media (max-width:720px){ .topbar__nav{ display:none; } }
+
+/* ============ hero ============ */
+.hero{
+  display:grid;
+  grid-template-columns:1.05fr 0.95fr;
+  gap:clamp(24px,4vw,64px);
+  padding:clamp(40px,7vw,96px) clamp(20px,5vw,56px) clamp(60px,6vw,96px);
+  align-items:start;
+}
+@media (max-width:960px){
+  .hero{ grid-template-columns:1fr; }
+}
+.hero__text h1{
+  font-size:clamp(2.3rem,4.6vw,3.6rem);
+  margin:0 0 20px;
+}
+.hero__sub{
+  max-width:52ch;
+  color:var(--text-on-light-muted);
+  font-size:1.08rem;
+  margin-bottom:32px;
+}
+.hero__cta{ display:flex; gap:16px; flex-wrap:wrap; margin-bottom:48px; }
+.btn{
+  border-radius:3px; padding:13px 24px; font-size:0.95rem; font-weight:600;
+  border:1px solid transparent; text-decoration:none; display:inline-flex; align-items:center; gap:8px;
+  transition:transform 0.15s ease, background 0.15s ease;
+}
+.btn--primary{ background:var(--ink); color:var(--paper); }
+.btn--primary:hover{ background:var(--amber-deep); }
+.btn--ghost{ border-color:var(--rule-light); color:var(--text-on-light); }
+.btn--ghost:hover{ border-color:var(--text-on-light); }
+
+.hero__stats{ display:flex; gap:clamp(20px,4vw,44px); flex-wrap:wrap; border-top:1px solid var(--rule-light); padding-top:24px; }
+.hero__stats dt{ font-family:var(--font-mono); font-size:1.15rem; color:var(--amber-deep); }
+.hero__stats dd{ margin:4px 0 0; font-size:0.85rem; color:var(--text-on-light-muted); max-width:18ch; }
+
+/* ============ phone mockup ============ */
+.phone-stage{ display:flex; flex-direction:column; align-items:center; gap:18px; }
+.phone{
+  width:100%; max-width:320px; aspect-ratio:320/660;
+  background:var(--ink);
+  border-radius:34px;
+  padding:12px;
+  box-shadow:0 30px 60px -20px rgba(22,23,28,0.45);
+  position:relative;
+  display:flex; flex-direction:column;
+}
+.phone__notch{
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  width:84px; height:18px; background:var(--ink); border-radius:0 0 14px 14px;
+  z-index:2;
+}
+.phone__notch::before{
+  content:""; position:absolute; inset:0; margin:auto; width:40px; height:5px;
+  background:#3a3c46; border-radius:3px; top:6px;
+}
+.phone__screen{
+  flex:1; background:var(--surface); border-radius:22px; overflow:hidden;
+  position:relative; display:flex; flex-direction:column;
+  font-size:0.92rem;
+}
+.phone__nav{
+  display:flex; justify-content:space-around; padding:14px 6px 6px;
+}
+.phone__nav button{
+  background:none; border:none; color:var(--text-on-dark-muted);
+  display:flex; flex-direction:column; align-items:center; gap:4px; font-size:0.62rem;
+  font-family:var(--font-mono); padding:4px 8px;
+}
+.phone__nav button svg{ width:20px; height:20px; }
+.phone__nav button.active{ color:var(--amber); }
+.phone-stage__caption{ font-size:0.78rem; color:var(--text-on-light-muted); font-family:var(--font-mono); text-align:center; }
+
+/* ---- phone screen contents (built by JS) ---- */
+.scr{ padding:20px 18px 10px; color:var(--text-on-dark); height:100%; display:flex; flex-direction:column; }
+.scr__label{ font-family:var(--font-mono); font-size:0.68rem; color:var(--text-on-dark-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; }
+.scr__title{ font-family:var(--font-display); font-weight:700; font-size:1.15rem; margin-bottom:16px; }
+
+/* spectrum viewfinder */
+.viewfinder{
+  position:relative; border-radius:14px; overflow:hidden; height:150px;
+  background:#0d0e12; border:1px solid rgba(242,238,228,0.1);
+  margin-bottom:16px;
+}
+.viewfinder__spectrum{
+  position:absolute; inset:0;
+  background:linear-gradient(90deg,#5b2fa8,#3b5fd9,#2fa8a0,#3fa65c,#e0d92e,#e0a82e,#d6493f);
+  opacity:0.85;
+}
+.viewfinder__grid{
+  position:absolute; inset:0;
+  background-image:repeating-linear-gradient(90deg, rgba(13,14,18,0.0) 0, rgba(13,14,18,0.0) 18px, rgba(13,14,18,0.35) 19px);
+}
+.viewfinder__reticle{
+  position:absolute; top:50%; left:50%; width:64px; height:64px; transform:translate(-50%,-50%);
+  border:2px solid rgba(242,238,228,0.75); border-radius:8px;
+}
+.viewfinder__scanline{
+  position:absolute; top:0; bottom:0; width:2px; background:rgba(242,238,228,0.9);
+  box-shadow:0 0 12px rgba(242,238,228,0.8);
+  animation:scanmove 2.2s ease-in-out infinite;
+}
+@keyframes scanmove{
+  0%,100%{ left:6%; } 50%{ left:94%; }
+}
+.viewfinder--locked .viewfinder__scanline{ display:none; }
+.viewfinder--locked .viewfinder__reticle{ border-color:var(--amber); }
+
+.readout{
+  font-family:var(--font-mono); font-size:0.72rem; color:var(--text-on-dark-muted);
+  display:flex; justify-content:space-between; margin-bottom:18px;
+}
+
+.scan-btn{
+  margin-top:auto; background:var(--amber); color:var(--ink); border:none; border-radius:10px;
+  padding:13px; font-weight:700; font-size:0.9rem; text-align:center;
+}
+.scan-btn:disabled{ opacity:0.6; }
+
+/* verdict card */
+.verdict{
+  border-radius:14px; padding:18px; margin-bottom:14px; flex:1;
+  display:flex; flex-direction:column; gap:10px;
+}
+.verdict--green{ background:rgba(63,166,92,0.15); border:1px solid rgba(63,166,92,0.4); }
+.verdict--yellow{ background:rgba(224,168,46,0.15); border:1px solid rgba(224,168,46,0.4); }
+.verdict--red{ background:rgba(214,73,63,0.15); border:1px solid rgba(214,73,63,0.4); }
+.verdict__light{ width:14px; height:14px; border-radius:50%; display:inline-block; margin-right:8px; }
+.verdict--green .verdict__light{ background:var(--green); }
+.verdict--yellow .verdict__light{ background:var(--yellow); }
+.verdict--red .verdict__light{ background:var(--red); }
+.verdict__tag{ font-family:var(--font-mono); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; display:flex; align-items:center; }
+.verdict__name{ font-family:var(--font-display); font-weight:700; font-size:1.2rem; }
+.verdict__desc{ font-size:0.82rem; color:var(--text-on-dark-muted); }
+.verdict__actions{ display:flex; gap:8px; margin-top:auto; }
+.verdict__actions button{
+  flex:1; padding:10px 8px; border-radius:8px; font-size:0.76rem; font-weight:600; border:1px solid rgba(242,238,228,0.2);
+  background:transparent; color:var(--text-on-dark);
+}
+.verdict__actions button.primary{ background:var(--red); border-color:var(--red); color:#fff; }
+.verdict--green .verdict__actions button.primary{ background:var(--green); border-color:var(--green); }
+.verdict--yellow .verdict__actions button.primary{ background:var(--yellow); border-color:var(--yellow); color:var(--ink); }
+
+/* report screen */
+.evidence-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+.evidence-item{
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--surface-2); border-radius:10px; padding:10px 12px; font-size:0.78rem;
+}
+.evidence-item span:first-child{ color:var(--text-on-dark-muted); }
+.evidence-item span:last-child{ font-family:var(--font-mono); }
+.submit-btn{ background:var(--red); color:#fff; border:none; border-radius:10px; padding:13px; font-weight:700; font-size:0.9rem; margin-top:auto; }
+.submit-note{ font-size:0.7rem; color:var(--text-on-dark-muted); text-align:center; margin-top:8px; }
+
+/* learn screen */
+.hazard-card{ background:var(--surface-2); border-radius:12px; padding:14px; margin-bottom:12px; }
+.hazard-card h4{ font-family:var(--font-display); font-size:0.98rem; margin-bottom:6px; }
+.hazard-card p{ font-size:0.78rem; color:var(--text-on-dark-muted); margin-bottom:4px; }
+.hazard-card .who{ display:inline-block; font-family:var(--font-mono); font-size:0.66rem; color:var(--red); border:1px solid var(--red); border-radius:4px; padding:2px 6px; margin-top:4px; }
+
+/* map screen */
+.map-canvas{
+  position:relative; height:220px; border-radius:14px; overflow:hidden; margin-bottom:14px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(63,166,92,0.18), transparent 40%),
+    radial-gradient(circle at 70% 60%, rgba(214,73,63,0.22), transparent 40%),
+    var(--surface-2);
+}
+.map-canvas__grid{ position:absolute; inset:0; background-image:
+    linear-gradient(rgba(242,238,228,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(242,238,228,0.06) 1px, transparent 1px);
+  background-size:22px 22px;
+}
+.pin{
+  position:absolute; width:12px; height:12px; border-radius:50% 50% 50% 0;
+  transform:translate(-50%,-100%) rotate(-45deg);
+  cursor:pointer;
+}
+.pin--green{ background:var(--green); }
+.pin--yellow{ background:var(--yellow); }
+.pin--red{ background:var(--red); }
+.pin-tooltip{
+  position:absolute; background:var(--ink); color:var(--paper); font-family:var(--font-mono);
+  font-size:0.62rem; padding:6px 8px; border-radius:6px; white-space:nowrap; transform:translate(-50%,-140%);
+  pointer-events:none; opacity:0; transition:opacity 0.15s ease;
+}
+.pin-tooltip.show{ opacity:1; }
+.score-row{ display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); border-radius:10px; padding:12px; }
+.score-row dt{ font-family:var(--font-mono); font-size:1.1rem; color:var(--green); }
+.score-row dd{ font-size:0.72rem; color:var(--text-on-dark-muted); text-align:right; max-width:16ch; }
+
+/* ============ generic sections ============ */
+.section{ padding:clamp(56px,8vw,120px) clamp(20px,5vw,56px); }
+.section--dark{ background:var(--ink); color:var(--text-on-dark); }
+.section--paper{ background:var(--paper-dim); }
+.section__inner{ max-width:1080px; margin:0 auto; }
+.section h2{ font-size:clamp(1.7rem,3.4vw,2.5rem); margin-bottom:40px; max-width:16ch; }
+
+.split{ display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-bottom:56px; }
+@media (max-width:720px){ .split{ grid-template-columns:1fr; } }
+.split__col h3{ font-size:1.05rem; margin-bottom:10px; color:var(--amber); }
+.split__col p{ color:var(--text-on-dark-muted); max-width:42ch; }
+
+.adulterant-table{ border-top:1px solid var(--rule); font-size:0.92rem; }
+.adulterant-table__row{
+  display:grid; grid-template-columns:1fr 1.4fr 2fr; gap:16px;
+  padding:14px 0; border-bottom:1px solid var(--rule);
+}
+.adulterant-table__row--head{ font-family:var(--font-mono); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-on-dark-muted); }
+.adulterant-table__row span:first-child{ font-weight:600; }
+.adulterant-table__row span:last-child{ color:var(--text-on-dark-muted); }
+@media (max-width:640px){
+  .adulterant-table__row{ grid-template-columns:1fr; gap:2px; padding:14px 0; }
+  .adulterant-table__row span:first-child{ color:var(--amber); }
+}
+
+.steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
+@media (max-width:860px){ .steps{ grid-template-columns:1fr; } }
+.step__num{ font-family:var(--font-mono); color:var(--amber-deep); font-size:0.85rem; display:block; margin-bottom:12px; }
+.step h3{ font-size:1.15rem; margin-bottom:10px; }
+.step p{ color:var(--text-on-light-muted); }
+
+.feature-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--rule-light); border:1px solid var(--rule-light); }
+@media (max-width:860px){ .feature-grid{ grid-template-columns:1fr; } }
+.feature-card{ background:var(--paper-dim); padding:32px; }
+.feature-card h3{ font-size:1.1rem; margin-bottom:12px; }
+.feature-card p{ color:var(--text-on-light-muted); font-size:0.95rem; }
+
+.impact-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:32px; margin-bottom:48px; }
+@media (max-width:780px){ .impact-grid{ grid-template-columns:1fr; } }
+.impact-stat dt{ font-family:var(--font-mono); font-size:2.4rem; color:var(--amber); }
+.impact-stat dd{ margin-top:8px; color:var(--text-on-dark-muted); max-width:30ch; }
+.impact-note{ max-width:70ch; color:var(--text-on-dark-muted); border-top:1px solid var(--rule); padding-top:28px; }
+
+.roadmap{ counter-reset:phase; display:flex; flex-direction:column; margin-bottom:48px; }
+.roadmap li{ display:grid; grid-template-columns:120px 1fr; gap:20px; padding:22px 0; border-bottom:1px solid var(--rule-light); }
+.roadmap__phase{ font-family:var(--font-mono); font-size:0.78rem; color:var(--amber-deep); }
+.roadmap h3{ font-size:1.05rem; margin-bottom:6px; }
+.roadmap p{ color:var(--text-on-light-muted); font-size:0.92rem; }
+@media (max-width:640px){ .roadmap li{ grid-template-columns:1fr; gap:4px; } }
+
+.hub-note{ background:var(--ink); color:var(--text-on-dark); border-radius:14px; padding:32px; }
+.hub-note h3{ margin-bottom:10px; color:var(--amber); }
+.hub-note p{ color:var(--text-on-dark-muted); max-width:60ch; }
+
+.footer{ padding:56px clamp(20px,5vw,56px) 80px; text-align:center; }
+.footer p:first-child{ font-family:var(--font-display); font-size:1.2rem; margin-bottom:10px; }
+.footer__meta{ font-size:0.78rem; color:var(--text-on-light-muted); font-family:var(--font-mono); }
+
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="topbar">
+  <div class="topbar__mark">NOVA<span>-</span>SCAN</div>
+  <nav class="topbar__nav">
+    <a href="#problem">Problem</a>
+    <a href="#how">How it works</a>
+    <a href="#features">Features</a>
+    <a href="#roadmap">Roadmap</a>
+  </nav>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero" id="top">
+  <div class="hero__text">
+    <p class="eyebrow">Modular forensic auditing for food safety</p>
+    <h1>Food purity,<br>provable in your hand.</h1>
+    <p class="hero__sub">Nova-Scan turns a salvaged DVD drive and a smartphone camera into a field spectrometer — so anyone can check a spice, a splash of milk, or a spoon of oil before it goes in the pan.</p>
+    <div class="hero__cta">
+      <button class="btn btn--primary" data-action="try-scan">Try the scan</button>
+      <a class="btn btn--ghost" href="#problem">Read the problem</a>
+    </div>
+    <dl class="hero__stats">
+      <div><dt>₹10,000–₹50,000</dt><dd>cost of a lab spectrometer</dd></div>
+      <div><dt>90%</dt><dd>lower cost, Nova-Scan vs. benchtop</dd></div>
+      <div><dt>2–5 min</dt><dd>time to a result</dd></div>
+    </dl>
+  </div>
+
+  <div class="phone-stage">
+    <div class="phone" id="phone">
+      <div class="phone__notch"></div>
+      <div class="phone__screen" id="phoneScreen">
+        <!-- injected by app.js -->
+      </div>
+      <nav class="phone__nav" id="phoneNav">
+        <button data-screen="scan" class="active" aria-label="Scan">
+          <svg viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M20 8V6a2 2 0 0 0-2-2h-2M4 16v2a2 2 0 0 0 2 2h2M20 16v2a2 2 0 0 1-2 2h-2M4 12h16" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+          <span>Scan</span>
+        </button>
+        <button data-screen="report" aria-label="Report">
+          <svg viewBox="0 0 24 24"><path d="M12 2 3 7v6c0 5 4 8.5 9 9 5-.5 9-4 9-9V7l-9-5Z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/></svg>
+          <span>Report</span>
+        </button>
+        <button data-screen="learn" aria-label="Learn">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span>Learn</span>
+        </button>
+        <button data-screen="map" aria-label="Community">
+          <svg viewBox="0 0 24 24"><path d="M9 20 3 17V4l6 3 6-3 6 3v13l-6-3-6 3Z" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linejoin="round"/></svg>
+          <span>Map</span>
+        </button>
+      </nav>
+    </div>
+    <p class="phone-stage__caption">Interactive prototype — tap around, nothing here reaches a real lab yet.</p>
+  </div>
+</section>
+
+<!-- ===================== PROBLEM ===================== -->
+<section class="section section--dark" id="problem">
+  <div class="section__inner">
+    <p class="eyebrow eyebrow--light">Problem statement</p>
+    <h2>Everyone knows. No one can check.</h2>
+    <div class="split">
+      <div class="split__col">
+        <h3>Everyone knows</h3>
+        <p>Press reports and FSSAI data already make food adulteration common knowledge in India — synthetic dyes in turmeric, melamine in milk. It isn't a secret.</p>
+      </div>
+      <div class="split__col">
+        <h3>No one can verify</h3>
+        <p>A lab test costs ₹10,000–₹50,000 and takes days. There's no way to check in the moment of buying — so unsafe food keeps moving, especially through low-income communities.</p>
+      </div>
+    </div>
+
+    <div class="adulterant-table" role="table" aria-label="Common adulterants and health risks">
+      <div class="adulterant-table__row adulterant-table__row--head" role="row">
+        <span role="columnheader">Food</span><span role="columnheader">Adulterant</span><span role="columnheader">Health risk</span>
+      </div>
+      <div class="adulterant-table__row" role="row"><span>Milk</span><span>Urea, formalin</span><span>Kidney &amp; liver damage, carcinogenic</span></div>
+      <div class="adulterant-table__row" role="row"><span>Oil</span><span>Argemone oil, TOCP</span><span>Epidemic dropsy, paralysis, blindness</span></div>
+      <div class="adulterant-table__row" role="row"><span>Turmeric</span><span>Metanil yellow, lead chromate</span><span>Neurotoxicity, lead poisoning, cancer</span></div>
+      <div class="adulterant-table__row" role="row"><span>Chilli</span><span>Sudan red, rhodamine B</span><span>Carcinogenic, banned for food use</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HOW IT WORKS ===================== -->
+<section class="section" id="how">
+  <div class="section__inner">
+    <p class="eyebrow">The detection engine</p>
+    <h2>Three steps, one traffic light.</h2>
+    <div class="steps">
+      <article class="step">
+        <span class="step__num">01</span>
+        <h3>Real-time spectral overlay</h3>
+        <p>The camera view shows a live diffraction spectrum from a repurposed DVD grating. Align the sample and the reticle locks on, reading its chemical fingerprint instantly.</p>
+      </article>
+      <article class="step">
+        <span class="step__num">02</span>
+        <h3>One-tap comparison</h3>
+        <p>Scan a trusted "known pure" sample once and save it as a baseline. Every market sample after that is a single-tap comparison against it.</p>
+      </article>
+      <article class="step">
+        <span class="step__num">03</span>
+        <h3>Traffic-light verdict</h3>
+        <p>Green is pure, yellow is substandard, red is adulterated — a result anyone can read in the shop, with no chemistry background required.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FEATURES ===================== -->
+<section class="section section--paper" id="features">
+  <div class="section__inner">
+    <p class="eyebrow">What the app does after the scan</p>
+    <h2>A verdict is the start, not the end.</h2>
+
+    <div class="feature-grid">
+      <article class="feature-card">
+        <h3>Active whistleblower tools</h3>
+        <p>A red result turns a shopper into a citizen investigator: a one-click FSSAI direct-link, an evidence vault that captures the spectral signature, GPS, and vendor ID automatically, and anonymous submission that never reveals identity to the vendor.</p>
+      </article>
+      <article class="feature-card">
+        <h3>Medical &amp; hazard intelligence</h3>
+        <p>Every detected adulterant comes with a clinical brief — WHO classification, where it's typically found, and the long-term health impact — in plain language, not a lab report.</p>
+      </article>
+      <article class="feature-card">
+        <h3>Community risk mapping</h3>
+        <p>Scans build a crowdsourced heatmap of adulteration by neighbourhood, and local markets earn a "Purity Score" from aggregate resident scans — safety made visible, not just reported.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== IMPACT ===================== -->
+<section class="section section--dark" id="impact">
+  <div class="section__inner">
+    <p class="eyebrow eyebrow--light">Why consumer-driven detection matters</p>
+    <div class="impact-grid">
+      <div class="impact-stat"><dt>70%</dt><dd>estimated adulteration rate in Indian street food, per recent food-safety surveys</dd></div>
+      <div class="impact-stat"><dt>40%</dt><dd>of common adulterants escape routine lab testing on cost and access alone</dd></div>
+      <div class="impact-stat"><dt>3×</dt><dd>faster regulatory response when citizen reports supplement official inspection</dd></div>
+    </div>
+    <p class="impact-note">Traditional food safety relies on periodic lab testing and inspector visits. Mobile detection turns every consumer into a frontline monitor — continuous surveillance that complements official oversight instead of waiting on it.</p>
+  </div>
+</section>
+
+<!-- ===================== ROADMAP ===================== -->
+<section class="section" id="roadmap">
+  <div class="section__inner">
+    <p class="eyebrow">Implementation roadmap</p>
+    <h2>From bench to bazaar.</h2>
+    <ol class="roadmap">
+      <li><span class="roadmap__phase">Phase 1</span><h3>Prototype validation</h3><p>Lab testing against NABL-certified reference spectrometers.</p></li>
+      <li><span class="roadmap__phase">Phase 2</span><h3>MSME pilot</h3><p>Field trials with spice processors and dairy cooperatives.</p></li>
+      <li><span class="roadmap__phase">Phase 3</span><h3>Scale manufacturing</h3><p>Local MSME production partnerships for regional distribution.</p></li>
+      <li><span class="roadmap__phase">Phase 4</span><h3>Digital integration</h3><p>Blockchain-verified audit trails for supply-chain transparency.</p></li>
+    </ol>
+
+    <div class="hub-note">
+      <h3>Calibration Hub network</h3>
+      <p>Local repair shops and tech centres become certified Calibration Hubs — zero equipment cost for MSME partners, recurring revenue from test commissions, and a branded, trained service layer between Nova-Scan and the street.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>Four builders, one mission: make food purity provable, not just promised.</p>
+  <p class="footer__meta">Nova-Scan — prototype interface, built from the project deck. Not a certified medical or lab device.</p>
+</footer>
+
+<script>
+// Nova-Scan prototype interactions.
+// This simulates the app experience described in the pitch deck.
+// No real spectral hardware is involved — results are drawn from a
+// small demo dataset so the flow can be explored end to end.
+
+const RESULTS = [
+  {
+    verdict: "green",
+    label: "Pure",
+    name: "Turmeric — matches baseline",
+    desc: "Spectral signature aligns with your saved pure sample within tolerance.",
+    wavelength: "±0.4nm",
+  },
+  {
+    verdict: "yellow",
+    label: "Substandard",
+    name: "Milk — diluted",
+    desc: "Composition suggests added water beyond acceptable range. Not hazardous, but under-strength.",
+    wavelength: "+6.2nm shift",
+  },
+  {
+    verdict: "red",
+    label: "Adulterated",
+    name: "Metanil Yellow detected",
+    desc: "Prohibited industrial dye, not approved for human consumption. Neurotoxic with repeated exposure.",
+    wavelength: "+14.8nm shift",
+    hazard: "metanil",
+  },
+  {
+    verdict: "red",
+    label: "Adulterated",
+    name: "Argemone Oil detected",
+    desc: "Common mustard-oil adulterant linked to Epidemic Dropsy. Do not consume this sample.",
+    wavelength: "+11.3nm shift",
+    hazard: "argemone",
+  },
+];
+
+const HAZARDS = {
+  metanil: {
+    name: "Metanil Yellow",
+    found: "Pulses, turmeric, food colouring",
+    who: "Prohibited industrial dye",
+    impact: "Neurotoxic — linked to brain damage and stunted growth in children.",
+  },
+  argemone: {
+    name: "Argemone Oil",
+    found: "Adulterated mustard oil",
+    who: "Causes Epidemic Dropsy",
+    impact: "Can lead to heart failure, permanent blindness, multi-organ failure.",
+  },
+  mineral: {
+    name: "Mineral Oil",
+    found: "Black pepper, cooking oils",
+    who: "WHO Group 1 Carcinogen",
+    impact: "Liver and spleen damage, gastrointestinal cancers.",
+  },
+};
+
+const MAP_PINS = [
+  { x: 22, y: 30, verdict: "green", label: "Sector 12 market — Purity 82" },
+  { x: 68, y: 22, verdict: "red", label: "Chandni Chowk stall #4 — Adulterated turmeric" },
+  { x: 44, y: 55, verdict: "yellow", label: "Lajpat Nagar dairy — Diluted milk" },
+  { x: 78, y: 68, verdict: "red", label: "Sadar Bazaar — Argemone oil flagged" },
+  { x: 30, y: 75, verdict: "green", label: "Green Park co-op — Purity 91" },
+];
+
+let lastResult = RESULTS[0];
+let currentScreen = "scan";
+const screenEl = document.getElementById("phoneScreen");
+const navButtons = document.querySelectorAll(".phone__nav button");
+
+function setScreen(name) {
+  currentScreen = name;
+  navButtons.forEach((b) => b.classList.toggle("active", b.dataset.screen === name));
+  render();
+}
+
+navButtons.forEach((btn) => {
+  btn.addEventListener("click", () => setScreen(btn.dataset.screen));
+});
+
+document.querySelectorAll('[data-action="try-scan"]').forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.getElementById("phone").scrollIntoView({ behavior: "smooth", block: "center" });
+    setScreen("scan");
+  });
+});
+
+function render() {
+  if (currentScreen === "scan") renderScan();
+  else if (currentScreen === "report") renderReport();
+  else if (currentScreen === "learn") renderLearn();
+  else if (currentScreen === "map") renderMap();
+}
+
+function renderScan(scanning = false, locked = false) {
+  screenEl.innerHTML = `
+    <div class="scr">
+      <p class="scr__label">Live scan</p>
+      <h2 class="scr__title">Point at a sample</h2>
+      <div class="viewfinder ${locked ? "viewfinder--locked" : ""}">
+        <div class="viewfinder__spectrum"></div>
+        <div class="viewfinder__grid"></div>
+        <div class="viewfinder__reticle"></div>
+        ${!locked ? '<div class="viewfinder__scanline"></div>' : ""}
+      </div>
+      <div class="readout">
+        <span>MODE: DIFFRACTION</span>
+        <span>${scanning ? "READING…" : locked ? "LOCKED" : "READY"}</span>
+      </div>
+      <button class="scan-btn" id="scanBtn" ${scanning ? "disabled" : ""}>
+        ${scanning ? "Scanning…" : "Scan sample"}
+      </button>
+    </div>
+  `;
+  document.getElementById("scanBtn").addEventListener("click", runScan);
+}
+
+function runScan() {
+  renderScan(true, false);
+  setTimeout(() => {
+    lastResult = RESULTS[Math.floor(Math.random() * RESULTS.length)];
+    renderVerdict();
+  }, 1400);
+}
+
+function renderVerdict() {
+  const r = lastResult;
+  screenEl.innerHTML = `
+    <div class="scr">
+      <p class="scr__label">Result</p>
+      <div class="verdict verdict--${r.verdict}">
+        <span class="verdict__tag"><span class="verdict__light"></span>${r.label}</span>
+        <span class="verdict__name">${r.name}</span>
+        <p class="verdict__desc">${r.desc}</p>
+        <p class="verdict__desc" style="font-family:var(--font-mono); font-size:0.7rem;">Spectral shift: ${r.wavelength}</p>
+        <div class="verdict__actions">
+          ${r.verdict === "red" ? '<button class="primary" id="toReport">Report vendor</button>' : ""}
+          ${r.hazard ? '<button id="toLearn">Health info</button>' : '<button id="toScanAgain">Scan again</button>'}
+        </div>
+      </div>
+    </div>
+  `;
+  const toReport = document.getElementById("toReport");
+  const toLearn = document.getElementById("toLearn");
+  const again = document.getElementById("toScanAgain");
+  if (toReport) toReport.addEventListener("click", () => setScreen("report"));
+  if (toLearn) toLearn.addEventListener("click", () => setScreen("learn"));
+  if (again) again.addEventListener("click", () => renderScan());
+}
+
+function renderReport() {
+  const r = lastResult;
+  const isRed = r.verdict === "red";
+  screenEl.innerHTML = `
+    <div class="scr">
+      <p class="scr__label">Whistleblower report</p>
+      <h2 class="scr__title">${isRed ? "Evidence captured" : "No active alert"}</h2>
+      ${
+        isRed
+          ? `
+        <div class="evidence-list">
+          <div class="evidence-item"><span>Spectral signature</span><span>saved</span></div>
+          <div class="evidence-item"><span>GPS coordinates</span><span>28.65°N, 77.23°E</span></div>
+          <div class="evidence-item"><span>Vendor ID</span><span>photo pending</span></div>
+          <div class="evidence-item"><span>Identity</span><span>anonymous</span></div>
+        </div>
+        <button class="submit-btn" id="submitReport">Submit to FSSAI</button>
+        <p class="submit-note">Your identity is never shared with the vendor.</p>
+      `
+          : `<p style="color:var(--text-on-dark-muted); font-size:0.85rem;">Scan a sample first — reporting unlocks automatically on a red verdict.</p>
+             <button class="scan-btn" id="goScan" style="margin-top:16px;">Go to scan</button>`
+      }
+    </div>
+  `;
+  const submitBtn = document.getElementById("submitReport");
+  const goScan = document.getElementById("goScan");
+  if (submitBtn) {
+    submitBtn.addEventListener("click", () => {
+      submitBtn.textContent = "Submitted ✓";
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = "0.7";
+    });
+  }
+  if (goScan) goScan.addEventListener("click", () => setScreen("scan"));
+}
+
+function renderLearn() {
+  const activeHazardKey = lastResult.hazard;
+  const keys = Object.keys(HAZARDS);
+  screenEl.innerHTML = `
+    <div class="scr">
+      <p class="scr__label">Medical &amp; hazard intelligence</p>
+      <h2 class="scr__title">What you're up against</h2>
+      <div style="overflow-y:auto;">
+        ${keys
+          .map((k) => {
+            const h = HAZARDS[k];
+            const active = k === activeHazardKey;
+            return `
+            <div class="hazard-card" style="${active ? "border:1px solid var(--red);" : ""}">
+              <h4>${h.name}</h4>
+              <p>Found in: ${h.found}</p>
+              <p>${h.impact}</p>
+              <span class="who">${h.who}</span>
+            </div>`;
+          })
+          .join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderMap() {
+  screenEl.innerHTML = `
+    <div class="scr">
+      <p class="scr__label">Community risk map</p>
+      <h2 class="scr__title">Nearby scans, last 48h</h2>
+      <div class="map-canvas" id="mapCanvas">
+        <div class="map-canvas__grid"></div>
+        ${MAP_PINS.map(
+          (p, i) => `<div class="pin pin--${p.verdict}" style="left:${p.x}%; top:${p.y}%;" data-i="${i}"></div>`
+        ).join("")}
+        <div class="pin-tooltip" id="pinTooltip"></div>
+      </div>
+      <dl class="score-row">
+        <div><dt>78</dt></div>
+        <dd>Aggregate purity score for markets within 2km, from resident scans</dd>
+      </dl>
+    </div>
+  `;
+  const tooltip = document.getElementById("pinTooltip");
+  document.querySelectorAll(".pin").forEach((pin) => {
+    pin.addEventListener("click", () => {
+      const p = MAP_PINS[+pin.dataset.i];
+      tooltip.textContent = p.label;
+      tooltip.style.left = pin.style.left;
+      tooltip.style.top = pin.style.top;
+      tooltip.classList.add("show");
+      setTimeout(() => tooltip.classList.remove("show"), 2200);
+    });
+  });
+}
+
+render();
+
+</script>
+</body>
+</html>
